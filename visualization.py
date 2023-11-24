@@ -1,14 +1,28 @@
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+def visualization_lastWord(string):
+    """
+    This function extracts the last word from a string.
+    """
+    lis = list(str(string).split(" "))
+    length = len(lis)
+    return lis[length-1]
+
 class AirplaneCrashes:
     def __init__(self, data_frame):
+        """
+        This function initializes the AirplaneCrashes class with a DataFrame.
+        """
         self.df= data_frame
-        
 
     def visualization_top_operator(self , top_n=20):
+        """
+        This function visualizes the top operators accounting for crashes.
+        """
         operator_count = self.df.groupby(['Operator']).count()['index']
         operator_count = pd.DataFrame(operator_count).dropna(axis='rows')
         operator_count = operator_count.rename (columns={'index' : 'count'})
@@ -25,9 +39,11 @@ class AirplaneCrashes:
         
         plt.show()
 
-
     def visualization_operator(self, top_n=20):
-        op_fatalities = pd.DataFrame(self.df.groupby(['Operator']).sum()['Fatalities'])
+        """
+        This function visualizes the top operators in terms of fatalities.
+        """
+        op_fatalities = pd.DataFrame(self.df.groupby(['Operator']).sum()['Fatalities']).dropna(axis='rows')
         op_fatalities = op_fatalities.sort_values("Fatalities", ascending = False)
         op_fatalities_x = op_fatalities.index
         op_fatalities_y = op_fatalities ['Fatalities']
@@ -36,10 +52,12 @@ class AirplaneCrashes:
         plt.barh (op_fatalities_x[:20], op_fatalities_y[:20])
         plt.xlabel ('Fatalities')
         
-
         plt.show()
 
     def visualization_route(self, top_n=20):
+        """
+        This function visualizes the top routes in terms of crashes.
+        """
         route_counte = self.df.groupby (['Route']).count().sort_values (by='index', ascending=False)
         route_count_x =np.array(route_counte.index)
         route_count_y = np.array(route_counte['index'])
@@ -50,6 +68,9 @@ class AirplaneCrashes:
         plt.show()
 
     def visualization_fatalities_by_route(self, top_n=20):
+        """
+        This function visualizes the fatalities by route.
+        """
         route_fatalities = self.df.groupby (['Route']).sum().drop(['index','Ground'], axis = 'columns')
         route_fatalities = route_fatalities.sort_values ('Fatalities', ascending = False)
         route_fatalities[:20].plot(kind='barh')
@@ -58,6 +79,9 @@ class AirplaneCrashes:
         plt.show()
 
     def visualization_year(self, top_n=20):
+        """
+        This function visualizes the distribution of crashes by year.
+        """
         years = pd.to_datetime(self.df['Date']).dt.year
         year_count = years.value_counts().head(top_n).sort_values(ascending=False)
 
@@ -67,12 +91,49 @@ class AirplaneCrashes:
         plt.title(f'Top {top_n} Year Distribution')
 
         plt.show()
-  
-    
+
+    def visualization_fatalities_by_year(self, top_n=20):
+        """
+        This function visualizes the fatalities and number of individuals aboard per year.
+        """
+        # Assuming 'Date' column exists in your DataFrame
+        self.df['Year'] = pd.to_datetime(self.df['Date']).dt.year
+        
+        # Grouping by 'Year' and summing 'Fatalities' and 'Aboard'
+        fatalities_by_year = self.df.groupby('Year')[['Fatalities', 'Aboard']].sum()
+
+        # Plotting fatalities and number of individuals aboard per year
+        fatalities_by_year.plot(kind='bar', figsize=(40, 20))
+        plt.xlabel('Year')
+        plt.ylabel('Count')
+        plt.title('Fatalities and Aboard per Year')
+        plt.show()
+
+     
+       
+    def visualization_count(self, top_n=20):
+        """
+        This function visualizes the count of crashes by region.
+        """
+        locations = np.array(self.df['Location']).tolist()
+        countries = []
+        for loc in locations:
+            countries.append(visualization_lastWord(loc))
+       
+        countries_df = pd.DataFrame({'Region': countries, 'count': np.ones(len(countries))})
+        countries_grouped = countries_df.groupby('Region').count().sort_values('count', ascending=False)
+        
+        plt.figure(figsize=(10, 6))
+        sns.barplot(x=countries_grouped['count'][:top_n], y=countries_grouped.index[:top_n])
+        plt.xlabel('Count')
+        plt.ylabel('Region')
+        plt.title(f'Top {top_n} Regions in Airplane Crashes')
+        plt.show()
+
+     
 
 
-
-file_path=  r"C:\Users\vanguard\OneDrive\Documents\GitHub\OOP-Visualization\AirplaneCrashes.csv"
+file_path= r"C:\Users\vanguard\OneDrive\Documents\GitHub\OOP-Visualization\AirplaneCrashes.csv"
 df = pd.read_csv(file_path)
 
 visualizer = AirplaneCrashes(df)
@@ -82,4 +143,7 @@ visualizer.visualization_operator(top_n=20)
 visualizer.visualization_route(top_n=20)
 visualizer.visualization_fatalities_by_route(top_n=20) 
 visualizer.visualization_year( top_n=20)
-visualizer.visualization_year(top_n=20)
+visualizer.visualization_fatalities_by_year(top_n=20)
+visualizer.visualization_count(top_n=20)
+#
+#This code provides a class called `AirplaneCrashes` that allows you to visualize various aspects of airplane crashes. The class has several methods, each of which generates a different visualization. The visualizations include the top operators accounting for crashes, the top operators in terms of fatalities, the top routes in terms of crashes, fatalities by route, the distribution of crashes by year, fatalities and the number of individuals aboard per year, and the count of crashes by region.
