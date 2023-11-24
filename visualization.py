@@ -12,12 +12,19 @@ def visualization_lastWord(string):
     length = len(lis)
     return lis[length-1]
 
+def crash_times(crash_datetime):
+   times = crash_datetime.dt.strftime('%H')
+   return times
+
 class AirplaneCrashes:
     def __init__(self, data_frame):
         """
         This function initializes the AirplaneCrashes class with a DataFrame.
         """
         self.df= data_frame
+
+
+    
 
     def visualization_top_operator(self , top_n=20):
         """
@@ -129,7 +136,52 @@ class AirplaneCrashes:
         plt.ylabel('Region')
         plt.title(f'Top {top_n} Regions in Airplane Crashes')
         plt.show()
+    def visualization_type_of_aircraft(self, top_n=20):
+        type_count=self.df.groupby(['Type']).count().sort_values('index', ascending = False)
+        tc_x= type_count.index
+        tc_y=type_count['index']
+        plt.barh(tc_x[:20],tc_y[:20])
+        plt.ylabel(f'Top {top_n} Type Of Aircraft')
+        plt.show()
 
+   
+   
+    def extract_hour(self):
+        time_df = pd.DataFrame(self.df.groupby(['Time']).count().sort_values('index', ascending=False)['index'])
+        times = np.array(time_df.index)
+        crash_times = []
+        for i in range(len(times)):
+            if times[i][0] == 'c':
+                times[i] = times[i][3:5]
+            else:
+                times[i] = times[i][:2]
+                crash_times.append(times[i][:2])
+
+        times_df = pd.DataFrame({'Hour': crash_times, 'count': np.ones(len(crash_times))})
+        return times_df
+
+    def visualization_time_of_day(self,top_n=20):
+        times_df = self.extract_hour()
+        total_by_hour = times_df.groupby('Hour').count().sort_values('count', ascending=False)
+        plt.barh(total_by_hour[:20].index, total_by_hour[:20]['count'])
+        plt.ylabel('Hour')
+        plt.xlabel('Crashes')
+        plt.show()
+
+    def visualization_time_of_the_day(self, top_n=20):
+        df=self.df.dropna(subset=['Time'])
+        df['Hour'] = df['Time'].astype(str).str[:2]
+        df=df[df['Hour'].str.isnumeric()]
+        df['Hour'] = df['Hour'].astype(int)
+
+        time_count= df['Hour'].value_counts().sort_index()
+        time_count.plot(kind='bar')
+        plt.xlabel('Hour of the Day')
+        plt.ylabel('Crash Count')
+        plt.title('Crashes by Time of Day')
+        plt.show()
+
+      
      
 
 
@@ -138,6 +190,7 @@ df = pd.read_csv(file_path)
 
 visualizer = AirplaneCrashes(df)
 
+
 visualizer.visualization_top_operator(top_n=20)
 visualizer.visualization_operator(top_n=20)
 visualizer.visualization_route(top_n=20)
@@ -145,5 +198,9 @@ visualizer.visualization_fatalities_by_route(top_n=20)
 visualizer.visualization_year( top_n=20)
 visualizer.visualization_fatalities_by_year(top_n=20)
 visualizer.visualization_count(top_n=20)
+visualizer.visualization_type_of_aircraft(top_n=20)
+visualizer.visualization_time_of_day(top_n=20)
+visualizer.visualization_time_of_the_day(top_n=20)
+
 #
 #This code provides a class called `AirplaneCrashes` that allows you to visualize various aspects of airplane crashes. The class has several methods, each of which generates a different visualization. The visualizations include the top operators accounting for crashes, the top operators in terms of fatalities, the top routes in terms of crashes, fatalities by route, the distribution of crashes by year, fatalities and the number of individuals aboard per year, and the count of crashes by region.
