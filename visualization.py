@@ -16,6 +16,7 @@ def crash_times(crash_datetime):
    times = crash_datetime.dt.strftime('%H')
    return times
 
+
 def handle_exceptions(func):
     def wrapper(*args, **kwargs):
         try:
@@ -168,8 +169,6 @@ class AirplaneCrashes:
         plt.ylabel('Region')
         plt.title(f'Top {top_n} Regions in Airplane Crashes')
         plt.show()
-
-    @handle_exceptions
     def visualization_type_of_aircraft(self, top_n=20):
         type_count=self.df.groupby(['Type']).count().sort_values('index', ascending = False)
         tc_x= type_count.index
@@ -179,7 +178,7 @@ class AirplaneCrashes:
         plt.show()
 
    
-    @handle_exceptions
+   
     def extract_hour(self):
         time_df = pd.DataFrame(self.df.groupby(['Time']).count().sort_values('index', ascending=False)['index'])
         times = np.array(time_df.index)
@@ -193,8 +192,12 @@ class AirplaneCrashes:
 
         times_df = pd.DataFrame({'Hour': crash_times, 'count': np.ones(len(crash_times))})
         return times_df
+
+      
+
+
     
-    @handle_exceptions  
+    @handle_exceptions
     def visualization_time_of_day(self,top_n=20):
         times_df = self.extract_hour()
         total_by_hour = times_df.groupby('Hour').count().sort_values('count', ascending=False)
@@ -203,6 +206,8 @@ class AirplaneCrashes:
         plt.xlabel('Crashes')
         plt.show()
 
+
+   
     @handle_exceptions
     def visualization_time_of_the_day(self, top_n=20):
         df=self.df.dropna(subset=['Time'])
