@@ -16,6 +16,14 @@ def crash_times(crash_datetime):
    times = crash_datetime.dt.strftime('%H')
    return times
 
+def handle_exceptions(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"Error occurred:{e}")
+    return wrapper
+
 class AirplaneCrashes:
     def __init__(self, data_frame):
         """
@@ -25,66 +33,89 @@ class AirplaneCrashes:
 
 
     
-
+    @handle_exceptions
     def visualization_top_operator(self , top_n=20):
         """
         This function visualizes the top operators accounting for crashes.
         """
-        operator_count = self.df.groupby(['Operator']).count()['index']
-        operator_count = pd.DataFrame(operator_count).dropna(axis='rows')
-        operator_count = operator_count.rename (columns={'index' : 'count'})
-        operator_count = operator_count.sort_values("count", ascending=False)
-        
-        op_count_x = operator_count.index[:top_n]
-        op_count_y = operator_count['count'][:top_n]
+        try:
+            if 'Operator' not in self.df.columns:
+                raise ValueError("column 'Operator' not found in DataFrame")
+            
+            operator_counts = self.df['Operator'].value_counts().dropna()
+            top_operators = operator_counts.head(top_n)
 
-        plt.figure(figsize=(40,8))
-        plt.barh (op_count_x, op_count_y)
-        plt.xlabel('Crashes')
-        plt.ylabel('Top Operator')
-        plt.title(f'Top {top_n} Operator Accounting For Crashes')
+            plt.figure(figsize=(40,8))
+            top_operators.plot(kind = 'barh')
+            plt.xlabel('Crashes')
+            plt.ylabel('Top Operator')
+            plt.title(f'Top {top_n} Operator Accounting For Crashes')
         
-        plt.show()
+            plt.show()
 
+       
+        except Exception as e:
+            print(f"Error:{e}")
+
+    @handle_exceptions
     def visualization_operator(self, top_n=20):
         """
         This function visualizes the top operators in terms of fatalities.
         """
-        op_fatalities = pd.DataFrame(self.df.groupby(['Operator']).sum()['Fatalities']).dropna(axis='rows')
-        op_fatalities = op_fatalities.sort_values("Fatalities", ascending = False)
-        op_fatalities_x = op_fatalities.index
-        op_fatalities_y = op_fatalities ['Fatalities']
-
-        plt.figure(figsize=(30,20))
-        plt.barh (op_fatalities_x[:20], op_fatalities_y[:20])
-        plt.xlabel ('Fatalities')
+        try:
         
-        plt.show()
+            op_fatalities = pd.DataFrame(self.df.groupby(['Operator']).sum()['Fatalities']).dropna(axis='rows')
+            op_fatalities = op_fatalities.sort_values("Fatalities", ascending = False)
+            op_fatalities_x = op_fatalities.index
+            op_fatalities_y = op_fatalities ['Fatalities']
 
+            plt.figure(figsize=(30,20))
+            plt.barh (op_fatalities_x[:20], op_fatalities_y[:20])
+            plt.xlabel ('Fatalities')
+        
+            plt.show()
+        except KeyError as e:
+            print(f"KeyError occurred:{e}")
+        except ValueError as e:
+            print(f"ValueError occurred:{e}")
+
+    @handle_exceptions
     def visualization_route(self, top_n=20):
         """
         This function visualizes the top routes in terms of crashes.
         """
-        route_counte = self.df.groupby (['Route']).count().sort_values (by='index', ascending=False)
-        route_count_x =np.array(route_counte.index)
-        route_count_y = np.array(route_counte['index'])
-        plt.figure(figsize=(30,20))
-        plt.barh (route_count_x[:20], route_count_y[:20])
-        plt.xlabel ('Crashes')
+        try:
+            route_counte = self.df.groupby (['Route']).count().sort_values (by='index', ascending=False)
+            route_count_x =np.array(route_counte.index)
+            route_count_y = np.array(route_counte['index'])
+            plt.figure(figsize=(30,20))
+            plt.barh (route_count_x[:20], route_count_y[:20])
+            plt.xlabel ('Crashes')
 
-        plt.show()
+            plt.show()
+        except KeyError as e:
+            print(f"KeyError occurred:{e}")
+        except ValueError as e:
+            print(f"ValueError occurred:{e}")
 
+    @handle_exceptions
     def visualization_fatalities_by_route(self, top_n=20):
         """
         This function visualizes the fatalities by route.
         """
-        route_fatalities = self.df.groupby (['Route']).sum().drop(['index','Ground'], axis = 'columns')
-        route_fatalities = route_fatalities.sort_values ('Fatalities', ascending = False)
-        route_fatalities[:20].plot(kind='barh')
-        plt.xlabel('Passangers')
+        try:
+            route_fatalities = self.df.groupby (['Route']).sum().drop(['index','Ground'], axis = 'columns')
+            route_fatalities = route_fatalities.sort_values ('Fatalities', ascending = False)
+            route_fatalities[:20].plot(kind='barh')
+            plt.xlabel('Passangers')
 
-        plt.show()
+            plt.show()
+        except KeyError as e:
+            print(f"KeyError occurred:{e}")
+        except ValueError as e:
+            print(f"ValueError occurred:{e}")
 
+    @handle_exceptions
     def visualization_year(self, top_n=20):
         """
         This function visualizes the distribution of crashes by year.
@@ -99,6 +130,7 @@ class AirplaneCrashes:
 
         plt.show()
 
+    @handle_exceptions
     def visualization_fatalities_by_year(self, top_n=20):
         """
         This function visualizes the fatalities and number of individuals aboard per year.
@@ -117,7 +149,7 @@ class AirplaneCrashes:
         plt.show()
 
      
-       
+    @handle_exceptions 
     def visualization_count(self, top_n=20):
         """
         This function visualizes the count of crashes by region.
@@ -136,6 +168,8 @@ class AirplaneCrashes:
         plt.ylabel('Region')
         plt.title(f'Top {top_n} Regions in Airplane Crashes')
         plt.show()
+
+    @handle_exceptions
     def visualization_type_of_aircraft(self, top_n=20):
         type_count=self.df.groupby(['Type']).count().sort_values('index', ascending = False)
         tc_x= type_count.index
@@ -145,7 +179,7 @@ class AirplaneCrashes:
         plt.show()
 
    
-   
+    @handle_exceptions
     def extract_hour(self):
         time_df = pd.DataFrame(self.df.groupby(['Time']).count().sort_values('index', ascending=False)['index'])
         times = np.array(time_df.index)
@@ -159,7 +193,8 @@ class AirplaneCrashes:
 
         times_df = pd.DataFrame({'Hour': crash_times, 'count': np.ones(len(crash_times))})
         return times_df
-
+    
+    @handle_exceptions  
     def visualization_time_of_day(self,top_n=20):
         times_df = self.extract_hour()
         total_by_hour = times_df.groupby('Hour').count().sort_values('count', ascending=False)
@@ -168,6 +203,7 @@ class AirplaneCrashes:
         plt.xlabel('Crashes')
         plt.show()
 
+    @handle_exceptions
     def visualization_time_of_the_day(self, top_n=20):
         df=self.df.dropna(subset=['Time'])
         df['Hour'] = df['Time'].astype(str).str[:2]
