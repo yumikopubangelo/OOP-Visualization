@@ -65,10 +65,11 @@ class AirplaneCrashes:
     @handle_exceptions
     def get_operator(self, top_n=20):
         try:
-            op_fatalities = pd.DataFrame(self.df.groupby(['Operator']).sum()['Fatalities']).dropna(axis='rows')
-            op_fatalities = op_fatalities.sort_values("Fatalities", ascending = False)
-            op_fatalities_x = op_fatalities.index
-            op_fatalities_y = op_fatalities ['Fatalities']
+            op_fatalities = self.df.groupby('Operator')['Fatalities'].sum().dropna() 
+            top_op_fatalities = op_fatalities.nlargest(top_n)
+            op_fatalities_x = top_op_fatalities.index.tolist()
+            op_fatalities_y = top_op_fatalities.tolist()
+    
             return op_fatalities_x, op_fatalities_y
         
         except (KeyError, ValueError) as e:
@@ -87,12 +88,14 @@ class AirplaneCrashes:
         """
         try:
             op_fatalities_x , op_fatalities_y = self.get_operator()
+
        
             
 
             plt.figure(figsize=(30,20))
             plt.barh (op_fatalities_x[:20], op_fatalities_y[:20])
             plt.xlabel ('Fatalities')
+            plt.title(f"Top {top_n} operator")
        
             plt.show()
         except AttributeError as e:
@@ -101,10 +104,12 @@ class AirplaneCrashes:
     @handle_exceptions
     def get_route(self, top_n=20):
         try:
-            route_counte = self.df.groupby (['Route']).count().sort_values (by='index', ascending=False)
-            route_count_x =np.array(route_counte.index)
-            route_count_y = np.array(route_counte['index'][:20])
-            return route_count_x, route_count_y
+            route_count = self.df['Route'].value_counts().sort_values(ascending = False)
+            top_route_counts = route_count.head(top_n)
+
+            route_count_x= top_route_counts.index.tolist()
+            route_count_y = top_route_counts.tolist()
+            return route_count_x,route_count_y
 
         except (KeyError, ValueError) as e:
             print(f"Error occurred:{e}")
@@ -125,6 +130,7 @@ class AirplaneCrashes:
             plt.figure(figsize=(30,20))
             plt.barh (route_count_x[:20], route_count_y[:20])
             plt.xlabel ('Crashes')
+            plt.title(f'Top {top_n} Route ')
 
             plt.show()
         except AttributeError as e:
@@ -134,9 +140,7 @@ class AirplaneCrashes:
     @handle_exceptions 
     def get_fatalities_by_route(self,top_n=20):
         try:
-            route_fatalities = self.df.groupby (['Route']).sum().drop(['index','Ground'], axis = 'columns')
-            route_fatalities = route_fatalities.sort_values ('Fatalities', ascending = False)
-            route_fatalities[:20].plot(kind='barh')
+            route_fatalities = self.df.groupby ('Route')['Fatalities'].sum().nlargest(top_n)
             return route_fatalities
             
         except (KeyError, ValueError) as e:
@@ -204,14 +208,11 @@ class AirplaneCrashes:
             print(f"Error occurred:{e}")
             
 
+    @handle_exceptions
     def get_count(self, top_n=20):
         try:
-            locations = np.array(self.df['Location']).tolist()
-            countries = []
-            for loc in locations:
-             countries.append(visualization_lastWord(loc))
-      
-            countries_df = pd.DataFrame({'Region': countries, 'count': np.ones(len(countries))})
+            last_words = self.df['Location'].str.split().str[-1]
+            countries_df = pd.DataFrame({'Region': last_words, 'count': np.ones(len(self.df))})
             countries_grouped = countries_df.groupby('Region').count().sort_values('count', ascending=False)
             return countries_grouped
         except (KeyError, ValueError) as e:
@@ -241,12 +242,15 @@ class AirplaneCrashes:
             print(f"AttributeError occurred:{e}")
 
     @handle_exceptions
-    def get_type_of_aircraft(self, top_n):
+    def visualization_type_of_aircraft(self, top_n=20):
         try:
-            type_count=self.df.groupby(['Type']).count().sort_values('index', ascending = False)
-            tc_x= type_count.index
+            type_count=df.groupby(['Type']).count().sort_values('index',ascending=False)
+            tc_x=type_count.index
             tc_y=type_count['index']
-            return tc_x, tc_y
+            plt.ylabel('TYPE OF AIRCRAFT')
+            plt.barh(tc_x[:20],tc_y[:20])
+            plt.title(f'Top {top_n} Type Of Aircraft')
+            plt.xlabel('Crashes')
         except (KeyError, ValueError) as e:
             print(f"Error occurred:{e}")
             return None
@@ -254,44 +258,21 @@ class AirplaneCrashes:
             print(f"AttributeError occurred:{e}")
             raise
 
-    @handle_exceptions
-    def visualization_type_of_aircraft(self, top_n=20):
-        try:
-            tc_y, tc_x = self.get_type_of_aircraft
-            plt.barh(tc_x[:20],tc_y[:20])
-            plt.ylabel(f'Top {top_n} Type Of Aircraft')
-            plt.show()
-
-        except AttributeError as e:
-            print(f"AttributeError occurred:{e}")
-
   
-    @handle_exceptions 
-    def visualization_time_of_day(self,top_n=20):
-        try:
-            times_df = self.extract_hour()
-            total_by_hour = times_df.groupby('Hour').count().sort_values('count', ascending=False)
-            plt.barh(total_by_hour[:20].index, total_by_hour[:20]['count'][:top_n])
-            plt.ylabel('Hour')
-            plt.xlabel('Crashes')
-            plt.title(f'Top {top_n} Hours in Airplane Crashes')
-            plt.show()
-
-        except (KeyError, ValueError,AttributeError) as e:
-            print(f"Error occurred:{e}")
             
 
     @handle_exceptions
     def get_time_of_the_day(self, top_n=20):
+
         try:
-            df=self.df.dropna(subset=['Time']).copy()
+            df = self.df.dropna(subset=['Time']).copy()
             df['Hour'] = df['Time'].astype(str).str[:2]
-            df=df[df['Hour'].str.isnumeric()]
+            df = df[df['Hour'].str.isnumeric()]
             df['Hour'] = df['Hour'].astype(int)
             return df
         except (KeyError, ValueError) as e:
-            print(f"Error occurred:{e}")
-            return None
+                print(f"Error occurred:{e}")
+                return None
         except AttributeError as e:
             print(f"AttributeError occurred:{e}")
             raise
@@ -323,16 +304,15 @@ df = pd.read_csv(file_path)
 visualizer = AirplaneCrashes(df)
 
 try:
-    visualizer.visualization_top_operator(top_n=20)
     visualizer.visualization_operator(top_n=20) 
+    visualizer.visualization_top_operator(top_n=20)
+    visualizer.visualization_time_of_the_day(top_n=20)
+    visualizer.visualization_count(top_n=20)
     visualizer.visualization_route(top_n=20)
+    visualizer.visualization_type_of_aircraft(top_n=20)
     visualizer.visualization_fatalities_by_route(top_n=20) 
     visualizer.visualization_year( top_n=20)
     visualizer.visualization_fatalities_by_year(top_n=20)
-    visualizer.visualization_count(top_n=20)
-    visualizer.visualization_type_of_aircraft(top_n=20)
-    visualizer.visualization_time_of_day(top_n=20)
-    visualizer.visualization_time_of_the_day(top_n=20)
 
 except Exception as e:
     print(f"Error occurred: {e}")
