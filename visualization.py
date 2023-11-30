@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
 def visualization_lastWord(string):
     """
@@ -294,12 +295,45 @@ class AirplaneCrashes:
         except AttributeError as e:
             print(f"AttributeError occurred:{e}")
 
-     
+
+def validate_path(file_path):
+    if not os.path.exists(file_path):
+        raise FileNotFoundError('File not found')
     
+    if not file_path.lower().endswith('.csv'):
+        raise ValueError('invalid file extension. expected a CSV file.')
+    
+    max_file_size = 10 * 1024 * 1024
+    if os.path.getsize(file_path) > max_file_size:
+        raise ValueError('File size exceeds the limit (10MB).')
+    ##Date,Time,Location,Operator,Flight #,Route,Type,Registration,cn/In,Aboard,Fatalities,Ground,Summary
+    expected_columns = ['Date', 'Time', 'Location', 'Operator', 'Flight #', 'Route', 'Type', 'Registration', 'cn/In', 'Aboard', 'Fatalities', 'Ground', 'Summary']
+    df = pd.read_csv(file_path)
+    if not all(col in df.columns for col in expected_columns):
+        raise ValueError('CSV file does not contain expected columns')
+
+def sanitize_path(file_path):
+    base_directory = 'C:\\Users\\vanguard\\OneDrive\\Documents\\GitHub\\OOP-Visualization\\AirplaneCrashes.csv'      
+    sanitized_path = os.path.abspath(os.path.join(base_directory, file_path))
+    if not sanitized_path.startswith(base_directory):
+        raise ValueError('Invalid file path')
+    return sanitized_path
+
+def read_sanitized_csv(user_input):
+    file_path = sanitize_path(user_input)
+    df = pd.read_csv(file_path)
+    return df
+
+user_input = r"C:\Users\vanguard\OneDrive\Documents\GitHub\OOP-Visualization\AirplaneCrashes.csv"
+try:
+    df = read_sanitized_csv(user_input)
+    print(df.head())  # Displaying a preview of the DataFrame
+except ValueError as e:
+    print(f"Error: {e}")
 
 
-file_path= r"C:\Users\vanguard\OneDrive\Documents\GitHub\OOP-Visualization\AirplaneCrashes.csv"
-df = pd.read_csv(file_path)
+       
+
 
 visualizer = AirplaneCrashes(df)
 
