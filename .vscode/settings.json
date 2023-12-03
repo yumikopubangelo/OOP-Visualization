@@ -3,5 +3,16 @@
         "folderBima"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "cSpell.words": [
+        "astype",
+        "barh",
+        "barplot",
+        "dropna",
+        "figsize",
+        "histplot",
+        "jsonify",
+        "xlabel",
+        "ylabel"
+    ]
 }

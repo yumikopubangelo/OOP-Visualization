@@ -169,7 +169,7 @@ class AirplaneCrashes:
             if route_fatalities is not None:
                 route_fatalities[:20].plot(kind = 'barh')
                 plt.title('Number of Fatalities per Route')
-                plt.xlabel('Passangers')    
+                plt.xlabel('Passengers')    
                 plt.show()
         except AttributeError as e:
             print(f'Attribute Error Occurred {e}')

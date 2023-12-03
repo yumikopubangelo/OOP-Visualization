@@ -15,5 +15,5 @@ library_name = 'requests'
 library_data = fetch_libraries (library_name)
 
 if library_data:
-    print (f"Infromation about {library_name}:")
+    print (f"Information about {library_name}:")
     print (library_data)
