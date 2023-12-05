@@ -1,6 +1,7 @@
 from flask import Flask, jsonify,request
 from routes import AirplaneCrashes
 import os
+import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 from functools import wraps
@@ -97,6 +98,123 @@ def visualization_operator(self, top_n=20):
             
             return jsonify({'visualization_path': plot_file})
         
-        except AttributeError as e:
+        except Exception as e:
+            return jsonify({'error': str(e)})  
+        
+     
+
+def visualization_fatalities_by_route(self, top_n=20):
+        """
+        This function visualizes the fatalities by route.
+        """
+        try:
+            route_fatalities = self.get_fatalities_by_route()
+            if route_fatalities is not None:
+                route_fatalities[:20].plot(kind = 'barh')
+                plt.title('Number of Fatalities per Route')
+                plt.xlabel('Passengers')    
+                plot_file = os.path.join({'visualization_fatalities_by_route': plot_file})
+                plt.savefig(plot_file)
+                return jsonify({'visualization_path': plot_file})
+        except Exception as e:
             return jsonify({'error': str(e)})
+        
+def visualization_year(self, top_n=20):
+        """
+        This function visualizes the distribution of crashes by year.
+        """
+        try:
+            years = pd.to_datetime(self.df['Date']).dt.year
+            year_count = years.value_counts().head(top_n).sort_values(ascending=False)
+
+            plt.figure(figsize=(10, 6))
+            sns.histplot(years, kde=True, color='green')
+            plt.xlabel('Year')
+            plt.title(f'Top {top_n} Year Distribution')
+
+            plot_file = os.path.join({'visualization_year': plot_file})
+            plt.savefig(plot_file)
+            return jsonify({'visualization_path': plot_file})
+
+        except Exception as e:
+            return jsonify({'error': str(e)})
+ 
+def visualization_fatalities_by_year(self, top_n=20):
+        """
+        This function visualizes the fatalities and number of individuals aboard per year.
+        """
+        try:
+            # Assuming 'Date' column exists in your DataFrame
+            self.df['Year'] = pd.to_datetime(self.df['Date']).dt.year
+       
+            # Grouping by 'Year' and summing 'Fatalities' and 'Aboard'
+            fatalities_by_year = self.df.groupby('Year')[['Fatalities', 'Aboard']].sum()
+
+            # Plotting fatalities and number of individuals aboard per year
+            fatalities_by_year.plot(kind='bar', figsize=(40, 20))
+            plt.xlabel('Year')
+            plt.ylabel('Count')
+            plt.title('Fatalities and Aboard per Year')
+            plot_file = os.path.join({'visualization_fatalities_by_year': plot_file})
+            plt.savefig(plot_file)
+            
+            return jsonify({'visualization_path': plot_file})
+
+        except Exception as e:
+            return jsonify({'error': str(e)})
+        
+def visualization_count(self, top_n=20):
+        """
+        This function visualizes the count of crashes by region.
+        """
+        try:
+            countries_grouped = self.get_count()
+       
+            plt.figure(figsize=(10, 6))
+            sns.barplot(x=countries_grouped['count'][:top_n], y=countries_grouped.index[:top_n])
+            plt.xlabel('Count')
+            plt.ylabel('Region')
+            plt.title(f'Top {top_n} Regions in Airplane Crashes')
+            
+            plot_file = os.path.join({'visualization_count': plot_file})
+            plt.savefig(plot_file)
+            return jsonify({'visualization_path': plot_file})
+
+        
+        except Exception as e:
+            return jsonify({'error': str(e)})
+        
+def visualization_type_of_aircraft(self, top_n=20):
+    
+    try:
+        type_count=df.groupby(['Type']).count().sort_values('index',ascending=False)
+        tc_x=type_count.index
+        tc_y=type_count['index']
+        plt.ylabel('TYPE OF AIRCRAFT')
+        plt.barh(tc_x[:20],tc_y[:20])
+        plt.title(f'Top {top_n} Type Of Aircraft')
+        plt.xlabel('Crashes')
+        
+        plot_file = os.path.join({'visualization_type_of_aircraft': plot_file})
+        plt.savefig(plot_file)
+        return jsonify({'visualization_path': plot_file})
+    except Exception as e:
+            return jsonify({'error': str(e)}) 
+        
+def visualization_time_of_the_day(self, top_n=20):
+        try:
+            time_count= self.get_time_of_the_day()
+
+            if time_count is not None:      
+                time_count= time_count['Hour'].value_counts().sort_index()
+                time_count.plot(kind='bar')
+                plt.xlabel('Hour of the Day')
+                plt.ylabel('Crash Count')
+                plt.title('Crashes by Time of Day')
+                
+                plot_file = os.path.join({'visualization_time_of_the_day' : plot_file})
+                plt.savefig(plot_file)
+                return jsonify({'visualization_path': plot_file})
+        except Exception as e:
+            return jsonify({'error': str(e)})    
             
