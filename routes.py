@@ -1,23 +1,69 @@
+# This part remains unchanged (import statements and setup_routes function)
+
 from flask import jsonify
-from visualization import AirplaneCrashes
+from visualization import AirplaneCrashes  # Import your class here
 
 def setup_routes(app):
-    visualizer = AirplaneCrashes()
+    # Initialize your class instance here with DataFrame
+    # Assuming 'df' is your DataFrame
+    visualizer = AirplaneCrashes(df)
 
-    @app.route('/top_operators_crashes', methods=['GET'])
+    # Revised route function names and implementation
+    @app.route('/top_routes_crashes', methods=['GET'])
+    def get_top_routes():
+        try:
+            # Code for retrieving top routes with most crashes
+            top_routes_x, top_routes_y = visualizer.get_top_routes(top_n=20)
+            return jsonify({"top_routes_crashes": {"routes": top_routes_x, "crash_counts": top_routes_y}})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route('/top_operators', methods=['GET'])
     def get_top_operators():
         try:
-            top_operators = visualizer.get_top_operator(top_n=20)
-            top_operators_dict = top_operators.to_dict()
-            return jsonify({"top_operators_crashes": top_operators_dict})
+            # Code for retrieving top operators with most crashes
+            top_operators = visualizer.get_top_operators(top_n=20)
+            return jsonify({"top_operators_crashes": top_operators.to_dict()})
         except Exception as e:
-            return jsonify({"error": str(e)}, 500)
-    @app.route('/top_operator', methods = ['GET'])
-    def get_operator():
+            return jsonify({"error": str(e)}), 500
+
+    @app.route('/operators_crashes', methods=['GET'])
+    def get_operators_crashes():
         try:
-            op_fatalities = visualizer.get_route(top_n=20)
-            op_fatalities_dict = op_fatalities.to_dict()
-            return jsonify({"operator": op_fatalities_dict})
+            # Code for retrieving operators and their crash counts
+            operator_crashes = visualizer.get_operator_crashes(top_n=20)
+            return jsonify({"operators_crashes": operator_crashes.to_dict()})
         except Exception as e:
-            return jsonify({"error": str(e)}, 500)
-    
+            return jsonify({"error": str(e)}), 500
+    @app.route ('/route_crashes', methods = ['GET'])  
+    def get_route():
+        try:
+            route_crashes = visualizer.get_route(top_=20)
+            return jsonify({"get_route": route_crashes.to_dict()})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    @app.route ('/fatality_data', methods = ['GET'])    
+    def get_fatalities_by_route():
+        try:
+            fatality_data = visualizer.get_fatalities_by_route(top_n=20)
+            return jsonify({"fatality_data": fatality_data.to_dict()})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    @app.route ('/countries_crashes', methods = ['GET'])     
+    def get_count():
+        try:
+        # Code for retrieving countries and their crash counts
+            countries_crashes = visualizer.get_count(top_n=20)
+            return jsonify({"countries_crashes": countries_crashes.to_dict()})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    @app.route ('/time_of_day_crashes', methods = ['GET'])    
+    def get_time_of_the_day():
+        try:
+            time_of_day_crashes = visualizer.get_time_of_the_day(top_n=20)
+            return jsonify({"time_of_day_crashes": time_of_day_crashes.to_dict()})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+        
+
+        

@@ -34,6 +34,7 @@ class AirplaneCrashes:
         This function initializes the AirplaneCrashes class with a DataFrame.
         """
         self.df= data_frame
+
         self.base_directory = base_dir
 
             
