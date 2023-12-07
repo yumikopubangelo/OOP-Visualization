@@ -1,13 +1,20 @@
 # This part remains unchanged (import statements and setup_routes function)
 
 from flask import jsonify
-from visualization import AirplaneCrashes  # Import your class here
+import pandas as pd
 
-def setup_routes(app):
-    # Initialize your class instance here with DataFrame
-    # Assuming 'df' is your DataFrame
-    visualizer = AirplaneCrashes(df)
+class AirplaneCrashes:
+    def __init__(self, data_frame, base_dir):
+        """
+        This function initializes the AirplaneCrashes class with a DataFrame.
+        """
+        self.data_frame = data_frame # Initialize the class with the provided DataFrame
+        self.base_directory = base_dir
+    base_directory = 'C:\\Users\\vanguard\\OneDrive\\Documents\\GitHub\\OOP-Visualization'
 
+
+def setup_routes(app, visualizer):
+        
     # Revised route function names and implementation
     @app.route('/top_routes_crashes', methods=['GET'])
     def get_top_routes():
@@ -64,6 +71,8 @@ def setup_routes(app):
             return jsonify({"time_of_day_crashes": time_of_day_crashes.to_dict()})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+        
+    return app
         
 
         

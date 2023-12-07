@@ -1,14 +1,19 @@
 from flask import Flask, jsonify,request
-from routes import AirplaneCrashes
 import os
+from routes import AirplaneCrashes
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 from functools import wraps
+from routes import setup_routes
 
 app = Flask(__name__)
+top_n= 20
+data_frame = pd.read_csv('C:\\Users\\vanguard\\OneDrive\\Documents\\GitHub\\OOP-Visualization\\AirplaneCrashes.csv')  # Replace 'path_to_your_data.csv' with your actual data file
+base_dir = 'C:\\Users\\vanguard\\OneDrive\\Documents\\GitHub\\OOP-Visualization'
+visualizer = AirplaneCrashes(base_dir, data_frame)
 
-base_directory = 'C:\\Users\\vanguard\\OneDrive\\Documents\\GitHub\\OOP-Visualization' 
+setup_routes(app, visualizer)
 
 def validate_path(file_path):
     if not os.path.exists(file_path):
@@ -27,8 +32,8 @@ def validate_path(file_path):
         raise ValueError('CSV file does not contain expected columns')
 
 def sanitize_path(file_path):
-    sanitized_path = os.path.abspath(os.path.join(base_directory, file_path))
-    if not sanitized_path.startswith(base_directory):
+    sanitized_path = os.path.abspath(os.path.join(base_dir, file_path))
+    if not sanitized_path.startswith(base_dir):
         raise ValueError('Invalid file path')
     return sanitized_path
 
@@ -52,38 +57,39 @@ def upload_file():
         file = request.files['file']
         if file.filename == '':
             return jsonify ({'error': 'No selected file'})
-        file.save(os.path.join(base_directory, file.filename))
+        file.save(os.path.join(base_dir, file.filename))
         df = read_sanitized_csv(file.filename)
         return jsonify({'message': 'file uploaded successfully'})
     except Exception as e:
         return jsonify({'error': str(e)})
     
 @app.route('/visualization/route', methods = ['GET'])
-def visualization_route(self, top_n=20):
+def visualization_route():
         """
         This function visualizes the top routes in terms of crashes.
         """
         try:      
-            route_count_x, route_count_y= self.get_route()
+            route_count_x, route_count_y= visualizer.get_route()
   
             plt.figure(figsize=(30,20))
             plt.barh (route_count_x[:20], route_count_y[:20])
             plt.xlabel ('Crashes')
             plt.title(f'Top {top_n} Route ')
 
-            plot_file = os.path.join(base_directory, 'route_visualization.png')
+            plot_file = os.path.join(base_dir, 'route_visualization.png')
             plt.savefig(plot_file)
             
             return jsonify({'visualization_path': plot_file})
         except Exception as e:
             return jsonify({'error': str(e)})
-        
-def visualization_operator(self, top_n=20):
+ 
+@app.route('/visualization/operator', methods = ['GET'])       
+def visualization_operator():
         """
         This function visualizes the top operators in terms of fatalities.
         """
         try:
-            op_fatalities_x , op_fatalities_y = self.get_operator()
+            op_fatalities_x , op_fatalities_y = visualizer.get_operator()
 
        
             
@@ -93,7 +99,7 @@ def visualization_operator(self, top_n=20):
             plt.xlabel ('Fatalities')
             plt.title(f"Top {top_n} operator")
        
-            plot_file = os.path.join(base_directory, 'operator.png')
+            plot_file = os.path.join(base_dir, 'operator.png')
             plt.savefig(plot_file)
             
             return jsonify({'visualization_path': plot_file})
@@ -102,13 +108,13 @@ def visualization_operator(self, top_n=20):
             return jsonify({'error': str(e)})  
         
      
-
-def visualization_fatalities_by_route(self, top_n=20):
+@app.route('/visualization/fatalities/by/route', methods = ['GET']) 
+def visualization_fatalities_by_route():
         """
         This function visualizes the fatalities by route.
         """
         try:
-            route_fatalities = self.get_fatalities_by_route()
+            route_fatalities = visualizer.get_fatalities_by_route()
             if route_fatalities is not None:
                 route_fatalities[:20].plot(kind = 'barh')
                 plt.title('Number of Fatalities per Route')
@@ -118,13 +124,13 @@ def visualization_fatalities_by_route(self, top_n=20):
                 return jsonify({'visualization_path': plot_file})
         except Exception as e:
             return jsonify({'error': str(e)})
-        
-def visualization_year(self, top_n=20):
+@app.route('/visualization/year', methods = ['GET'])       
+def visualization_year():
         """
         This function visualizes the distribution of crashes by year.
         """
         try:
-            years = pd.to_datetime(self.df['Date']).dt.year
+            years = pd.to_datetime(visualizer.df['Date']).dt.year
             year_count = years.value_counts().head(top_n).sort_values(ascending=False)
 
             plt.figure(figsize=(10, 6))
@@ -138,17 +144,17 @@ def visualization_year(self, top_n=20):
 
         except Exception as e:
             return jsonify({'error': str(e)})
- 
-def visualization_fatalities_by_year(self, top_n=20):
+@app.route('/visualization/fatalities/by/year', methods = ['GET']) 
+def visualization_fatalities_by_year():
         """
         This function visualizes the fatalities and number of individuals aboard per year.
         """
         try:
             # Assuming 'Date' column exists in your DataFrame
-            self.df['Year'] = pd.to_datetime(self.df['Date']).dt.year
+            visualizer.df['Year'] = pd.to_datetime(visualizer.df['Date']).dt.year
        
             # Grouping by 'Year' and summing 'Fatalities' and 'Aboard'
-            fatalities_by_year = self.df.groupby('Year')[['Fatalities', 'Aboard']].sum()
+            fatalities_by_year = visualizer.df.groupby('Year')[['Fatalities', 'Aboard']].sum()
 
             # Plotting fatalities and number of individuals aboard per year
             fatalities_by_year.plot(kind='bar', figsize=(40, 20))
@@ -162,13 +168,13 @@ def visualization_fatalities_by_year(self, top_n=20):
 
         except Exception as e:
             return jsonify({'error': str(e)})
-        
-def visualization_count(self, top_n=20):
+@app.route('/visualization/count', methods = ['GET'])        
+def visualization_count():
         """
         This function visualizes the count of crashes by region.
         """
         try:
-            countries_grouped = self.get_count()
+            countries_grouped = visualizer.get_count()
        
             plt.figure(figsize=(10, 6))
             sns.barplot(x=countries_grouped['count'][:top_n], y=countries_grouped.index[:top_n])
@@ -183,8 +189,8 @@ def visualization_count(self, top_n=20):
         
         except Exception as e:
             return jsonify({'error': str(e)})
-        
-def visualization_type_of_aircraft(self, top_n=20):
+@app.route('/visualization/type/of/aircraft', methods = ['GET'])        
+def visualization_type_of_aircraft():
     
     try:
         type_count=df.groupby(['Type']).count().sort_values('index',ascending=False)
@@ -200,10 +206,10 @@ def visualization_type_of_aircraft(self, top_n=20):
         return jsonify({'visualization_path': plot_file})
     except Exception as e:
             return jsonify({'error': str(e)}) 
-        
-def visualization_time_of_the_day(self, top_n=20):
+@app.route('/visualization/time/of/the/day', methods = ['GET'])     
+def visualization_time_of_the_day():
         try:
-            time_count= self.get_time_of_the_day()
+            time_count= visualizer.get_time_of_the_day()
 
             if time_count is not None:      
                 time_count= time_count['Hour'].value_counts().sort_index()
@@ -216,5 +222,5 @@ def visualization_time_of_the_day(self, top_n=20):
                 plt.savefig(plot_file)
                 return jsonify({'visualization_path': plot_file})
         except Exception as e:
-            return jsonify({'error': str(e)})    
+            return jsonify({'error': str(e)})   
             
