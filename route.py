@@ -1,3 +1,5 @@
+from flask import jsonify
+from visualization import AirplaneCrashes
 from routes_func import (
     get_top_routes,
     get_top_operators,
