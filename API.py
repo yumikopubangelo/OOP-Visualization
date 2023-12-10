@@ -1,13 +1,17 @@
 from flask import Flask, jsonify,request
 import os
-from routes import AirplaneCrashes
+from visualization import AirplaneCrashes
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 from functools import wraps
-from routes import setup_routes
+from route import get_route, setup_routes
+
+
 
 app = Flask(__name__)
+
+plot_counter = 0  # Initialize a counter for unique filenames
 top_n= 20
 data_frame = pd.read_csv('C:\\Users\\vanguard\\OneDrive\\Documents\\GitHub\\OOP-Visualization\\AirplaneCrashes.csv')  # Replace 'path_to_your_data.csv' with your actual data file
 base_dir = 'C:\\Users\\vanguard\\OneDrive\\Documents\\GitHub\\OOP-Visualization'
@@ -63,25 +67,57 @@ def upload_file():
     except Exception as e:
         return jsonify({'error': str(e)})
     
-@app.route('/visualization/route', methods = ['GET'])
+@app.route('/route_data', methods=['GET'])
 def visualization_route():
-        """
-        This function visualizes the top routes in terms of crashes.
-        """
-        try:      
-            route_count_x, route_count_y= visualizer.get_route()
-  
-            plt.figure(figsize=(30,20))
-            plt.barh (route_count_x[:20], route_count_y[:20])
-            plt.xlabel ('Crashes')
-            plt.title(f'Top {top_n} Route ')
+    """
+    This function visualizes the top routes in terms of crashes and processes top operators' data.
+    """
+    try:
+        global plot_counter      
+        route_count_x, route_count_y = visualizer.get_route()
 
-            plot_file = os.path.join(base_dir, 'route_visualization.png')
-            plt.savefig(plot_file)
-            
-            return jsonify({'visualization_path': plot_file})
-        except Exception as e:
-            return jsonify({'error': str(e)})
+        plt.figure(figsize=(30, 20))
+        plt.barh(route_count_x[:20], route_count_y[:20])
+        plt.xlabel('Crashes')
+        plt.title(f'Top {top_n} Route')
+
+        plot_counter += 1
+        plot_file = f"route_visualization_{plot_counter}.png"
+
+        # Call the function to get route data
+        route_data = get_route()
+
+        # Handle the case where route_data is None
+        if route_data is None:
+            return jsonify({'error': 'No route data available'}), 404
+
+        # Further processing of route data
+        # For example, assuming route_data is a dictionary
+        # Extracting relevant information from the data
+        routes = route_data.get("get_route", {})
+        route_names = list(routes.keys())
+        route_counts = list(routes.values())
+
+        # Further visualization or processing with route data
+        # For instance, plotting the routes and their crash counts
+        plt.figure(figsize=(12, 8))
+        sns.barplot(x=route_counts, y=route_names)
+        plt.xlabel('Crash Counts')
+        plt.ylabel('Routes')
+        plt.title('Top Routes and Their Crash Counts')
+
+        # Save the plot with a unique filename
+        plot_counter += 1
+        plot_file_routes = f"routes_visualization_{plot_counter}.png"
+        plt.savefig(os.path.join(base_dir, plot_file_routes))
+        plt.clf()  # Clear the current figure
+
+        return jsonify({
+            'visualization_path_routes': plot_file_routes,
+            'visualization_path_operators': plot_file
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)})
  
 @app.route('/visualization/operator', methods = ['GET'])       
 def visualization_operator():
@@ -89,6 +125,7 @@ def visualization_operator():
         This function visualizes the top operators in terms of fatalities.
         """
         try:
+            global plot_counter  
             op_fatalities_x , op_fatalities_y = visualizer.get_operator()
 
        
@@ -99,8 +136,12 @@ def visualization_operator():
             plt.xlabel ('Fatalities')
             plt.title(f"Top {top_n} operator")
        
-            plot_file = os.path.join(base_dir, 'operator.png')
-            plt.savefig(plot_file)
+            plot_counter += 1
+            plot_file = f"route_visualization_{plot_counter}.png"
+
+            # Save the plot with a unique filename
+            plt.savefig(os.path.join(base_dir, plot_file))
+            plt.clf()  # Clear the current figure
             
             return jsonify({'visualization_path': plot_file})
         
@@ -114,13 +155,18 @@ def visualization_fatalities_by_route():
         This function visualizes the fatalities by route.
         """
         try:
+            global plot_counter
             route_fatalities = visualizer.get_fatalities_by_route()
             if route_fatalities is not None:
                 route_fatalities[:20].plot(kind = 'barh')
                 plt.title('Number of Fatalities per Route')
                 plt.xlabel('Passengers')    
-                plot_file = os.path.join({'visualization_fatalities_by_route': plot_file})
-                plt.savefig(plot_file)
+                plot_counter += 1
+                plot_file = f"route_visualization_{plot_counter}.png"
+
+            # Save the plot with a unique filename
+                plt.savefig(os.path.join(base_dir, plot_file))
+                plt.clf()  # Clear the current figure
                 return jsonify({'visualization_path': plot_file})
         except Exception as e:
             return jsonify({'error': str(e)})
@@ -130,6 +176,7 @@ def visualization_year():
         This function visualizes the distribution of crashes by year.
         """
         try:
+            global plot_counter
             years = pd.to_datetime(visualizer.df['Date']).dt.year
             year_count = years.value_counts().head(top_n).sort_values(ascending=False)
 
@@ -138,8 +185,12 @@ def visualization_year():
             plt.xlabel('Year')
             plt.title(f'Top {top_n} Year Distribution')
 
-            plot_file = os.path.join({'visualization_year': plot_file})
-            plt.savefig(plot_file)
+            plot_counter += 1
+            plot_file = f"route_visualization_{plot_counter}.png"
+
+            # Save the plot with a unique filename
+            plt.savefig(os.path.join(base_dir, plot_file))
+            plt.clf()  # Clear the current figure
             return jsonify({'visualization_path': plot_file})
 
         except Exception as e:
@@ -150,6 +201,7 @@ def visualization_fatalities_by_year():
         This function visualizes the fatalities and number of individuals aboard per year.
         """
         try:
+            global plot_counter
             # Assuming 'Date' column exists in your DataFrame
             visualizer.df['Year'] = pd.to_datetime(visualizer.df['Date']).dt.year
        
@@ -161,8 +213,12 @@ def visualization_fatalities_by_year():
             plt.xlabel('Year')
             plt.ylabel('Count')
             plt.title('Fatalities and Aboard per Year')
-            plot_file = os.path.join({'visualization_fatalities_by_year': plot_file})
-            plt.savefig(plot_file)
+            plot_counter += 1
+            plot_file = f"route_visualization_{plot_counter}.png"
+
+            # Save the plot with a unique filename
+            plt.savefig(os.path.join(base_dir, plot_file))
+            plt.clf()  # Clear the current figure
             
             return jsonify({'visualization_path': plot_file})
 
@@ -174,6 +230,7 @@ def visualization_count():
         This function visualizes the count of crashes by region.
         """
         try:
+            global plot_counter
             countries_grouped = visualizer.get_count()
        
             plt.figure(figsize=(10, 6))
@@ -182,8 +239,12 @@ def visualization_count():
             plt.ylabel('Region')
             plt.title(f'Top {top_n} Regions in Airplane Crashes')
             
-            plot_file = os.path.join({'visualization_count': plot_file})
-            plt.savefig(plot_file)
+            plot_counter += 1
+            plot_file = f"route_visualization_{plot_counter}.png"
+
+            # Save the plot with a unique filename
+            plt.savefig(os.path.join(base_dir, plot_file))
+            plt.clf()  # Clear the current figure
             return jsonify({'visualization_path': plot_file})
 
         
@@ -193,6 +254,7 @@ def visualization_count():
 def visualization_type_of_aircraft():
     
     try:
+        global plot_counter
         type_count=df.groupby(['Type']).count().sort_values('index',ascending=False)
         tc_x=type_count.index
         tc_y=type_count['index']
@@ -201,14 +263,19 @@ def visualization_type_of_aircraft():
         plt.title(f'Top {top_n} Type Of Aircraft')
         plt.xlabel('Crashes')
         
-        plot_file = os.path.join({'visualization_type_of_aircraft': plot_file})
-        plt.savefig(plot_file)
+        plot_counter += 1
+        plot_file = f"route_visualization_{plot_counter}.png"
+
+            # Save the plot with a unique filename
+        plt.savefig(os.path.join(base_dir, plot_file))
+        plt.clf()  # Clear the current figure
         return jsonify({'visualization_path': plot_file})
     except Exception as e:
             return jsonify({'error': str(e)}) 
 @app.route('/visualization/time/of/the/day', methods = ['GET'])     
 def visualization_time_of_the_day():
         try:
+            global plot_counter
             time_count= visualizer.get_time_of_the_day()
 
             if time_count is not None:      
@@ -218,9 +285,16 @@ def visualization_time_of_the_day():
                 plt.ylabel('Crash Count')
                 plt.title('Crashes by Time of Day')
                 
-                plot_file = os.path.join({'visualization_time_of_the_day' : plot_file})
-                plt.savefig(plot_file)
+                plot_counter += 1
+                plot_file = f"route_visualization_{plot_counter}.png"
+
+            # Save the plot with a unique filename
+                plt.savefig(os.path.join(base_dir, plot_file))
+                plt.clf()  # Clear the current figure
                 return jsonify({'visualization_path': plot_file})
         except Exception as e:
             return jsonify({'error': str(e)})   
-            
+        
+if __name__ == '__main__':
+    app.run(debug=True)
+        
