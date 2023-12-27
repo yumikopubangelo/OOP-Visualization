@@ -8,6 +8,7 @@
         "astype",
         "barh",
         "barplot",
+        "crashe",
         "dropna",
         "figsize",
         "histplot",
